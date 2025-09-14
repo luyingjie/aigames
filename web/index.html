@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano游戏框架测试页面</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .section h3 {
+            color: #555;
+            margin-top: 0;
+        }
+        
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            width: 200px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #007cba;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #005a87;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: scroll;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+        }
+        
+        .log-entry.request {
+            color: #007cba;
+        }
+        
+        .log-entry.response {
+            color: #28a745;
+        }
+        
+        .log-entry.error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Nano游戏框架测试页面</h1>
+        
+        <div class="section">
+            <h3>🌐 连接状态</h3>
+            <div id="connectionStatus" class="status disconnected">未连接</div>
+            <button id="connectBtn" onclick="connectToServer()">连接服务器</button>
+            <button id="disconnectBtn" onclick="disconnectFromServer()" disabled>断开连接</button>
+        </div>
+        
+        <div class="section">
+            <h3>👤 用户登录</h3>
+            <input type="text" id="loginName" placeholder="用户名" value="测试用户">
+            <input type="password" id="loginPassword" placeholder="密码" value="123456">
+            <input type="number" id="loginAge" placeholder="年龄" value="25" style="display: none;">
+            <button id="loginBtn" onclick="login()" disabled>登录</button>
+        </div>
+        
+        <div class="section">
+            <h3>📝 用户注册</h3>
+            <input type="text" id="signupName" placeholder="用户名" value="新用户">
+            <input type="password" id="signupPassword" placeholder="密码" value="123456">
+            <input type="number" id="signupAge" placeholder="年龄" value="30">
+            <button id="signupBtn" onclick="signup()" disabled>注册</button>
+        </div>
+        
+        <div class="section">
+            <h3>📋 操作日志</h3>
+            <button onclick="clearLog()">清空日志</button>
+            <div id="logContainer" class="log"></div>
+        </div>
+    </div>
+
+    <script src="./nano-websocket-client/protocol.js"></script>
+    <script src="./nano-websocket-client/nano-websocket-client.js"></script>
+    <script>
+        var nano = window.nano;
+        var connected = false;
+        
+        // 更新连接状态显示
+        function updateConnectionStatus(isConnected) {
+            connected = isConnected;
+            const statusDiv = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const loginBtn = document.getElementById('loginBtn');
+            const signupBtn = document.getElementById('signupBtn');
+            
+            if (isConnected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '✅ 已连接到服务器';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                loginBtn.disabled = false;
+                signupBtn.disabled = false;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '❌ 未连接到服务器';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                loginBtn.disabled = true;
+                signupBtn.disabled = true;
+            }
+        }
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+        }
+        
+        // 连接到服务器
+        function connectToServer() {
+            addLog('正在连接到服务器...', 'request');
+            
+            nano.init({
+                host: "127.0.0.1", 
+                port: 3250, 
+                path: "/nano",
+                log: false,
+                user: {},
+                handshakeCallback: function() {
+                    addLog('握手完成', 'response');
+                }
+            }, function() {
+                addLog('✅ 成功连接到nano服务器!', 'response');
+                updateConnectionStatus(true);
+                
+                // 监听服务器推送的消息
+                nano.on("notify", function(data) {
+                    addLog(`收到服务器推送: ${JSON.stringify(data)}`, 'response');
+                });
+            });
+        }
+        
+        // 断开连接
+        function disconnectFromServer() {
+            if (connected) {
+                nano.disconnect();
+                addLog('已断开与服务器的连接', 'request');
+                updateConnectionStatus(false);
+            }
+        }
+        
+        // 登录
+        function login() {
+            if (!connected) {
+                addLog('❌ 请先连接服务器', 'error');
+                return;
+            }
+            
+            const name = document.getElementById('loginName').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!name) {
+                addLog('❌ 请输入用户名', 'error');
+                return;
+            }
+            
+            if (!password) {
+                addLog('❌ 请输入密码', 'error');
+                return;
+            }
+            
+            addLog(`发送登录请求: name=${name}`, 'request');
+            
+            nano.request("gate.Login", {
+                name: name,
+                password: password
+            }, function(data) {
+                addLog(`登录响应: ${JSON.stringify(data)}`, 'response');
+                if (data.code === 200) {
+                    addLog(`🎉 ${data.msg} - 欢迎 ${data.name}! 年龄: ${data.age}`, 'response');
+                } else {
+                    addLog(`❌ 登录失败: ${data.msg}`, 'error');
+                }
+            });
+        }
+        
+        // 注册
+        function signup() {
+            if (!connected) {
+                addLog('❌ 请先连接服务器', 'error');
+                return;
+            }
+            
+            const name = document.getElementById('signupName').value;
+            const password = document.getElementById('signupPassword').value;
+            const age = parseInt(document.getElementById('signupAge').value);
+            
+            if (!name) {
+                addLog('❌ 请输入用户名', 'error');
+                return;
+            }
+            
+            if (!password) {
+                addLog('❌ 请输入密码', 'error');
+                return;
+            }
+            
+            if (!age || age <= 0) {
+                addLog('❌ 请输入有效年龄', 'error');
+                return;
+            }
+            
+            addLog(`发送注册请求: name=${name}, age=${age}`, 'request');
+            
+            nano.request("gate.Signup", {
+                name: name,
+                password: password,
+                age: age
+            }, function(data) {
+                addLog(`注册响应: ${JSON.stringify(data)}`, 'response');
+                if (data.code === 200) {
+                    addLog(`🎉 ${data.msg} - 用户 ${data.name} 注册成功!`, 'response');
+                } else {
+                    addLog(`❌ 注册失败: ${data.msg}`, 'error');
+                }
+            });
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('页面加载完成，准备就绪!', 'info');
+            updateConnectionStatus(false);
+        });
+        
+        // 监听页面关闭事件，自动断开连接
+        window.addEventListener('beforeunload', function() {
+            if (connected) {
+                nano.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>
