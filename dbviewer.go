@@ -6,18 +6,12 @@ import (
 	"log"
 	"time"
 
+	"aigames/internal/models"
+
 	"go.etcd.io/bbolt"
 )
 
-type User struct {
-	Name        string    `json:"name"`
-	Password    string    `json:"password"`
-	Age         int       `json:"age"`
-	CreatedAt   time.Time `json:"created_at"`
-	LastLoginAt time.Time `json:"last_login_at"`
-}
-
-func main() {
+func main_1() {
 	// 打开数据库
 	db, err := bbolt.Open("game.db", 0600, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
@@ -39,7 +33,7 @@ func main() {
 		fmt.Printf("📊 用户总数: %d\n\n", b.Stats().KeyN)
 
 		return b.ForEach(func(k, v []byte) error {
-			var user User
+			var user models.User
 			if err := json.Unmarshal(v, &user); err != nil {
 				fmt.Printf("❌ 解析用户数据失败: %v\n", err)
 				return nil
