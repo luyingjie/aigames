@@ -1,8 +1,11 @@
 package models
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
-	"math/rand"
+	"math/big"
+	mrand "math/rand"
 	"sort"
 	"time"
 )
@@ -64,10 +67,63 @@ func NewGameLogic(game *Game) *GameLogic {
 
 // ShuffleDeck 洗牌
 func ShuffleDeck(deck []Card) {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(deck), func(i, j int) {
+	mrand.Seed(time.Now().UnixNano())
+	mrand.Shuffle(len(deck), func(i, j int) {
 		deck[i], deck[j] = deck[j], deck[i]
 	})
+}
+
+// 洗牌：crypto/rand 种子 + Fisher–Yates
+func Shuffle1(deck []Card) []Card {
+	// 1. 深度拷贝，避免外部引用
+	out := make([]Card, len(deck))
+	copy(out, deck)
+
+	// 2. 真随机种子
+	var seed int64
+	if n, err := rand.Int(rand.Reader, big.NewInt(1<<62)); err == nil {
+		seed = n.Int64()
+	} else {
+		// 降级用当前时间，理论上不会发生
+		seed = time.Now().UnixNano()
+	}
+
+	// 3. Fisher–Yates 倒序交换
+	r := mrand.New(mrand.NewSource(seed))
+	for i := len(out) - 1; i > 0; i-- {
+		j := r.Intn(i + 1)
+		out[i], out[j] = out[j], out[i]
+	}
+	return out
+}
+
+// 均匀 [0,max) 的加密安全随机数
+func cryptoIntn(max int) int {
+	if max <= 1<<16-1 { // 小范围用 uint16 足够
+		var n uint16
+		binary.Read(rand.Reader, binary.LittleEndian, &n)
+		return int(n) % max
+	}
+	// 大范围用 big.Int
+	k, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	return int(k.Int64())
+}
+
+// 加密安全洗牌
+func Shuffle2(deck []Card) {
+	for i := len(deck) - 1; i > 0; i-- {
+		j := cryptoIntn(i + 1)
+		deck[i], deck[j] = deck[j], deck[i]
+	}
+}
+
+// 种子不可预测 → 初始状态不可预测；
+// 性能比全程 crypto/rand 高一个量级；
+func Shuffle3(deck []Card) {
+	var seed int64
+	binary.Read(rand.Reader, binary.LittleEndian, &seed)
+	r := mrand.New(mrand.NewSource(seed))
+	r.Shuffle(len(deck), func(i, j int) { deck[i], deck[j] = deck[j], deck[i] })
 }
 
 // DealCards 发牌
