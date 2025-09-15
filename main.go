@@ -3,46 +3,15 @@ package main
 import (
 	"aigames/internal/config"
 	"aigames/internal/database"
+	"aigames/internal/handlers"
+	"aigames/internal/services"
 	"aigames/pkg/logger"
 	"net/http"
 	"strconv"
 
-	"aigames/internal/handlers"
-
 	"github.com/lonng/nano"
 	"github.com/lonng/nano/component"
 	jsonSerializer "github.com/lonng/nano/serialize/json"
-)
-
-type (
-
-	// LoginRequest 登录请求结构
-	LoginRequest struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
-	}
-
-	// LoginResponse 登录响应结构
-	LoginResponse struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-		Name string `json:"name"`
-		Age  int    `json:"age"`
-	}
-
-	// SignupRequest 注册请求结构
-	SignupRequest struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
-		Age      int    `json:"age"`
-	}
-
-	// SignupResponse 注册响应结构
-	SignupResponse struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-		Name string `json:"name"`
-	}
 )
 
 func main() {
@@ -81,6 +50,9 @@ func main() {
 	}
 	defer db.Close()
 
+	// 创建服务实例
+	userService := services.NewUserService(db.GetBoltDB())
+
 	// 启动静态文件服务器为前端页面提供服务
 	go func() {
 		http.Handle("/", http.FileServer(http.Dir("./web/")))
@@ -92,8 +64,8 @@ func main() {
 
 	// 创建组件容器并注册处理器
 	components := &component.Components{}
-	components.Register(handlers.NewUserHandler(),
-		component.WithName("gate"),
+	components.Register(handlers.NewUser(userService),
+		component.WithName("user"),
 	)
 
 	// 启动nano WebSocket服务器

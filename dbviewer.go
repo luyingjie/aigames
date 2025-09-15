@@ -13,7 +13,7 @@ import (
 
 func main_1() {
 	// 打开数据库
-	db, err := bbolt.Open("game.db", 0600, &bbolt.Options{Timeout: 1 * time.Second})
+	db, err := bbolt.Open("./data/game.db", 0600, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		log.Fatal("打开数据库失败:", err)
 	}

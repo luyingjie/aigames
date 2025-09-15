@@ -3,23 +3,55 @@ package handlers
 import (
 	"time"
 
+	"aigames/internal/models"
+	"aigames/internal/services"
 	"aigames/pkg/logger"
 
 	"github.com/lonng/nano/component"
 	"github.com/lonng/nano/session"
 )
 
-// Handler 处理器结构体
-type UserHandler struct {
-	component.Base
-}
+type (
+	// Handler 处理器结构体
+	User struct {
+		component.Base
+		userService *services.UserService
+	}
+	// LoginRequest 登录请求结构
+	LoginRequest struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+	}
 
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+	// LoginResponse 登录响应结构
+	LoginResponse struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	// SignupRequest 注册请求结构
+	SignupRequest struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+		Age      int    `json:"age"`
+	}
+
+	// SignupResponse 注册响应结构
+	SignupResponse struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Name string `json:"name"`
+	}
+)
+
+func NewUser(userService *services.UserService) *User {
+	return &User{userService: userService}
 }
 
 // Login 登录处理方法
-func (h *UserHandler) Login(s *session.Session, req *LoginRequest) error {
+func (h *User) Login(s *session.Session, req *LoginRequest) error {
 	logger.Info("用户登录请求: %s", req.Name)
 
 	// 验证输入
@@ -40,7 +72,7 @@ func (h *UserHandler) Login(s *session.Session, req *LoginRequest) error {
 	}
 
 	// 从数据库获取用户
-	user, err := getUser(req.Name)
+	user, err := h.userService.GetUser(req.Name)
 	if err != nil {
 		resp := &LoginResponse{
 			Code: 404,
@@ -50,7 +82,7 @@ func (h *UserHandler) Login(s *session.Session, req *LoginRequest) error {
 	}
 
 	// 验证密码
-	hashedPassword := hashPassword(req.Password)
+	hashedPassword := h.userService.HashPassword(req.Password)
 	if user.Password != hashedPassword {
 		resp := &LoginResponse{
 			Code: 401,
@@ -60,8 +92,8 @@ func (h *UserHandler) Login(s *session.Session, req *LoginRequest) error {
 	}
 
 	// 更新最后登录时间
-	if err := updateLastLogin(req.Name); err != nil {
-		logger.Printf("更新登录时间失败: %v", err)
+	if err := h.userService.UpdateLastLogin(req.Name); err != nil {
+		logger.Error("更新登录时间失败: %v", err)
 	}
 
 	// 登录成功
@@ -72,13 +104,13 @@ func (h *UserHandler) Login(s *session.Session, req *LoginRequest) error {
 		Age:  user.Age,
 	}
 
-	logger.Printf("用户 %s 登录成功", req.Name)
+	logger.Info("用户 %s 登录成功", req.Name)
 	return s.Response(resp)
 }
 
 // Signup 注册处理方法
-func (h *UserHandler) Signup(s *session.Session, req *SignupRequest) error {
-	logger.Printf("用户注册请求: %s", req.Name)
+func (h *User) Signup(s *session.Session, req *SignupRequest) error {
+	logger.Info("用户注册请求: %s", req.Name)
 
 	// 验证输入
 	if req.Name == "" {
@@ -106,7 +138,7 @@ func (h *UserHandler) Signup(s *session.Session, req *SignupRequest) error {
 	}
 
 	// 检查用户是否已存在
-	if userExists(req.Name) {
+	if h.userService.UserExists(req.Name) {
 		resp := &SignupResponse{
 			Code: 409,
 			Msg:  "用户名已存在",
@@ -115,17 +147,17 @@ func (h *UserHandler) Signup(s *session.Session, req *SignupRequest) error {
 	}
 
 	// 创建新用户
-	user := &User{
+	user := &models.User{
 		Name:        req.Name,
-		Password:    hashPassword(req.Password),
+		Password:    h.userService.HashPassword(req.Password),
 		Age:         req.Age,
 		CreatedAt:   time.Now(),
 		LastLoginAt: time.Now(),
 	}
 
 	// 保存用户到数据库
-	if err := saveUser(user); err != nil {
-		logger.Printf("保存用户失败: %v", err)
+	if err := h.userService.SaveUser(user); err != nil {
+		logger.Error("保存用户失败: %v", err)
 		resp := &SignupResponse{
 			Code: 500,
 			Msg:  "注册失败，请稍后重试",
@@ -140,6 +172,6 @@ func (h *UserHandler) Signup(s *session.Session, req *SignupRequest) error {
 		Name: user.Name,
 	}
 
-	logger.Printf("用户 %s 注册成功", req.Name)
+	logger.Info("用户 %s 注册成功", req.Name)
 	return s.Response(resp)
 }

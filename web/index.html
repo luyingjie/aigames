@@ -245,7 +245,7 @@
             
             addLog(`发送登录请求: name=${name}`, 'request');
             
-            nano.request("gate.Login", {
+            nano.request("user.Login", {
                 name: name,
                 password: password
             }, function(data) {
@@ -286,7 +286,7 @@
             
             addLog(`发送注册请求: name=${name}, age=${age}`, 'request');
             
-            nano.request("gate.Signup", {
+            nano.request("user.Signup", {
                 name: name,
                 password: password,
                 age: age
