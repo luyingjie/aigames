@@ -38,6 +38,20 @@ const app = createApp({
         const nano = ref(null);
         const nanoInitialized = ref(false);
 
+        // 页面加载时检查本地存储的登录状态
+        onMounted(() => {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                try {
+                    currentUser.value = JSON.parse(savedUser);
+                    currentView.value = 'rooms';
+                    console.log('恢复登录状态:', currentUser.value);
+                } catch (e) {
+                    console.error('解析保存的用户信息失败:', e);
+                }
+            }
+        });
+
         // 计算属性
         const isMyTurn = computed(() => {
             if (!gameState.value || !currentUser.value) return false;
@@ -145,12 +159,46 @@ const app = createApp({
                     handshakeCallback: function() {
                         console.log('nano握手完成');
                     }
-                }, function() {
+                }, async function() {
                     console.log('nano连接成功');
                     nanoInitialized.value = true;
+                    
+                    // 如果用户已登录，需要重新认证
+                    if (currentUser.value) {
+                        try {
+                            await reauthenticate();
+                        } catch (err) {
+                            console.error('重新认证失败:', err);
+                            // 认证失败则清除本地存储的用户信息
+                            logout();
+                        }
+                    }
+                    
                     resolve();
                 });
             });
+        };
+
+        // 重新认证方法
+        const reauthenticate = async () => {
+            if (!currentUser.value) return;
+            
+            // 发送一个请求来重新设置会话中的用户信息
+            // 这里我们使用一个特殊的请求来恢复会话状态
+            try {
+                const response = await request('user.RestoreSession', {
+                    name: currentUser.value.name
+                });
+                
+                if (response.code === 200) {
+                    console.log('会话恢复成功');
+                } else {
+                    throw new Error(response.message || '会话恢复失败');
+                }
+            } catch (err) {
+                console.error('重新认证失败:', err);
+                throw err;
+            }
         };
 
         const request = (route, data) => {
@@ -187,6 +235,8 @@ const app = createApp({
                     success.value = response.message;
                     if (isLogin.value) {
                         currentUser.value = response.data;
+                        // 保存登录状态到本地存储
+                        localStorage.setItem('currentUser', JSON.stringify(response.data));
                         currentView.value = 'rooms';
                         await refreshRooms();
                     } else {
@@ -217,6 +267,8 @@ const app = createApp({
             currentRoom.value = null;
             gameState.value = null;
             playerHand.value = [];
+            // 清除本地存储的登录状态
+            localStorage.removeItem('currentUser');
         };
 
         // 房间相关方法
@@ -272,6 +324,36 @@ const app = createApp({
                     startGameStatePolling();
                 } else {
                     error.value = response.message || '创建房间失败';
+                }
+            } catch (err) {
+                error.value = '网络错误：' + err.message;
+            } finally {
+                loading.value = false;
+            }
+        };
+
+        // 删除房间
+        const deleteRoom = async (room) => {
+            if (!confirm(`确定要删除房间 "${room.name}" 吗？`)) {
+                return;
+            }
+
+            loading.value = true;
+            error.value = '';
+
+            try {
+                // 确保nano已经初始化
+                await initNano();
+                
+                const response = await request('room.DeleteRoom', {
+                    room_id: room.id
+                });
+
+                if (response.code === 200) {
+                    success.value = '删除房间成功';
+                    await refreshRooms();
+                } else {
+                    error.value = response.message || '删除房间失败';
                 }
             } catch (err) {
                 error.value = '网络错误：' + err.message;
@@ -576,6 +658,7 @@ const app = createApp({
             logout,
             refreshRooms,
             createRoom,
+            deleteRoom,
             joinRoom,
             doJoinRoom,
             leaveRoom,

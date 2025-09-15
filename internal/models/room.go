@@ -9,7 +9,7 @@ import (
 type RoomStatus int
 
 const (
-	RoomStatusIdle   RoomStatus = 0 // 空闲
+	RoomStatusIdle    RoomStatus = 0 // 空闲
 	RoomStatusWaiting RoomStatus = 1 // 等待玩家
 	RoomStatusPlaying RoomStatus = 2 // 游戏中
 )
@@ -35,15 +35,15 @@ var RoomTypeNames = map[RoomType]string{
 
 // Room 房间对象
 type Room struct {
-	ID          string     `json:"id"`          // 房间ID
-	Name        string     `json:"name"`        // 房间名称
-	Owner       string     `json:"owner"`       // 房主
-	Type        RoomType   `json:"type"`        // 房间类型
-	Status      RoomStatus `json:"status"`      // 房间状态
-	MaxPlayers  int        `json:"max_players"` // 最大玩家数
-	Password    string     `json:"password"`    // 房间密码（私人房间）
-	CreatedAt   time.Time  `json:"created_at"`  // 创建时间
-	UpdatedAt   time.Time  `json:"updated_at"`  // 更新时间
+	ID          string     `json:"id"`           // 房间ID
+	Name        string     `json:"name"`         // 房间名称
+	Owner       string     `json:"owner"`        // 房主
+	Type        RoomType   `json:"type"`         // 房间类型
+	Status      RoomStatus `json:"status"`       // 房间状态
+	MaxPlayers  int        `json:"max_players"`  // 最大玩家数
+	Password    string     `json:"password"`     // 房间密码（私人房间）
+	CreatedAt   time.Time  `json:"created_at"`   // 创建时间
+	UpdatedAt   time.Time  `json:"updated_at"`   // 更新时间
 	CurrentGame *Game      `json:"current_game"` // 当前游戏
 }
 
@@ -85,8 +85,8 @@ func (r *Room) EndGame() {
 // IsGameActive 检查是否有活跃的游戏
 func (r *Room) IsGameActive() bool {
 	return r.CurrentGame != nil &&
-		   r.CurrentGame.Status != GameStatusFinished &&
-		   r.CurrentGame.Status != GameStatusAbandoned
+		r.CurrentGame.Status != GameStatusFinished &&
+		r.CurrentGame.Status != GameStatusAbandoned
 }
 
 // GetPlayerCount 获取当前玩家数量
@@ -110,6 +110,14 @@ func (r *Room) IsFull() bool {
 
 // CanJoin 检查玩家是否可以加入
 func (r *Room) CanJoin(password string) bool {
+	// 如果游戏已经结束，允许新玩家加入（将开始新游戏）
+	if r.CurrentGame != nil &&
+		(r.CurrentGame.Status == GameStatusFinished ||
+			r.CurrentGame.Status == GameStatusAbandoned) {
+		// 清除旧游戏，准备开始新游戏
+		r.CurrentGame = nil
+	}
+
 	if r.IsFull() {
 		return false
 	}

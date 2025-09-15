@@ -15,7 +15,7 @@ import (
 type RoomService struct {
 	db    *bbolt.DB
 	rooms map[string]*models.Room // 内存中的房间缓存
-	mutex sync.RWMutex           // 读写锁
+	mutex sync.RWMutex            // 读写锁
 }
 
 // NewRoomService 创建房间服务实例
@@ -198,7 +198,12 @@ func (rs *RoomService) LeaveRoom(roomID, username string) error {
 	playerCount := room.GetPlayerCount()
 	if playerCount == 0 {
 		room.Status = models.RoomStatusIdle
-		room.CurrentGame = nil
+		// 如果游戏已经结束，可以清除当前游戏
+		if room.CurrentGame != nil &&
+			(room.CurrentGame.Status == models.GameStatusFinished ||
+				room.CurrentGame.Status == models.GameStatusAbandoned) {
+			room.CurrentGame = nil
+		}
 	} else {
 		room.Status = models.RoomStatusWaiting
 	}

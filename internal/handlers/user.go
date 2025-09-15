@@ -67,6 +67,36 @@ func (h *User) Login(s *session.Session, req *protocol.LoginRequest) error {
 	return s.Response(resp)
 }
 
+// RestoreSession 恢复会话处理方法
+func (h *User) RestoreSession(s *session.Session, req *protocol.RestoreSessionRequest) error {
+	logger.Info("恢复会话请求: %s", req.Name)
+
+	// 验证请求参数
+	if err := protocol.ValidateRequest(req); err != nil {
+		resp := protocol.BadRequest(err.Error())
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	// 从数据库获取用户
+	user, err := h.userService.GetUser(req.Name)
+	if err != nil {
+		resp := protocol.UserNotFound()
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	// 恢复会话，保存用户信息到session
+	s.Set("username", user.Name)
+
+	// 恢复成功
+	resp := protocol.RestoreSessionSuccess(user.Name, user.Age)
+	resp.SetRequestId(req.RequestId)
+
+	logger.Info("用户 %s 会话恢复成功", req.Name)
+	return s.Response(resp)
+}
+
 // Signup 注册处理方法
 func (h *User) Signup(s *session.Session, req *protocol.SignupRequest) error {
 	logger.Info("用户注册请求: %s", req.Name)

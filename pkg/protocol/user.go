@@ -28,6 +28,12 @@ type SignupData struct {
 	Name string `json:"name"` // 用户名
 }
 
+// RestoreSessionRequest 恢复会话请求
+type RestoreSessionRequest struct {
+	BaseRequest
+	Name string `json:"name" validate:"required,min=1,max=50"` // 用户名
+}
+
 // NewLoginRequest 创建登录请求
 func NewLoginRequest(name, password string) LoginRequest {
 	return LoginRequest{
@@ -47,6 +53,14 @@ func NewSignupRequest(name, password string, age int) SignupRequest {
 	}
 }
 
+// NewRestoreSessionRequest 创建恢复会话请求
+func NewRestoreSessionRequest(name string) RestoreSessionRequest {
+	return RestoreSessionRequest{
+		BaseRequest: NewBaseRequest(),
+		Name:        name,
+	}
+}
+
 // LoginSuccess 创建登录成功响应
 func LoginSuccess(name string, age int) BaseResponse {
 	data := LoginData{
@@ -62,4 +76,13 @@ func SignupSuccess(name string) BaseResponse {
 		Name: name,
 	}
 	return SuccessWithMessage(data, "注册成功")
+}
+
+// RestoreSessionSuccess 创建恢复会话成功响应
+func RestoreSessionSuccess(name string, age int) BaseResponse {
+	data := LoginData{
+		Name: name,
+		Age:  age,
+	}
+	return SuccessWithMessage(data, "会话恢复成功")
 }

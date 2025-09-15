@@ -7,16 +7,16 @@ import "aigames/internal/models"
 // CreateRoomRequest 创建房间请求
 type CreateRoomRequest struct {
 	BaseRequest
-	Name     string           `json:"name" validate:"required,min=1,max=50"`     // 房间名称
-	Type     models.RoomType  `json:"type"`                                      // 房间类型
-	Password string           `json:"password,omitempty" validate:"max=20"`      // 房间密码（可选）
+	Name     string          `json:"name" validate:"required,min=1,max=50"` // 房间名称
+	Type     models.RoomType `json:"type"`                                  // 房间类型
+	Password string          `json:"password,omitempty" validate:"max=20"`  // 房间密码（可选）
 }
 
 // JoinRoomRequest 加入房间请求
 type JoinRoomRequest struct {
 	BaseRequest
-	RoomID   string `json:"room_id" validate:"required"`   // 房间ID
-	Password string `json:"password,omitempty"`            // 房间密码（如果需要）
+	RoomID   string `json:"room_id" validate:"required"` // 房间ID
+	Password string `json:"password,omitempty"`          // 房间密码（如果需要）
 }
 
 // LeaveRoomRequest 离开房间请求
@@ -40,6 +40,12 @@ type SetReadyRequest struct {
 
 // StartGameRequest 开始游戏请求
 type StartGameRequest struct {
+	BaseRequest
+	RoomID string `json:"room_id" validate:"required"` // 房间ID
+}
+
+// DeleteRoomRequest 删除房间请求
+type DeleteRoomRequest struct {
 	BaseRequest
 	RoomID string `json:"room_id" validate:"required"` // 房间ID
 }
@@ -82,34 +88,34 @@ type GetPlayerHandRequest struct {
 
 // RoomData 房间数据
 type RoomData struct {
-	ID           string              `json:"id"`            // 房间ID
-	Name         string              `json:"name"`          // 房间名称
-	Owner        string              `json:"owner"`         // 房主
-	Type         models.RoomType     `json:"type"`          // 房间类型
-	TypeName     string              `json:"type_name"`     // 房间类型名称
-	Status       models.RoomStatus   `json:"status"`        // 房间状态
-	StatusName   string              `json:"status_name"`   // 房间状态名称
-	MaxPlayers   int                 `json:"max_players"`   // 最大玩家数
-	PlayerCount  int                 `json:"player_count"`  // 当前玩家数
-	HasPassword  bool                `json:"has_password"`  // 是否有密码
-	CreatedAt    string              `json:"created_at"`    // 创建时间
-	UpdatedAt    string              `json:"updated_at"`    // 更新时间
+	ID          string            `json:"id"`           // 房间ID
+	Name        string            `json:"name"`         // 房间名称
+	Owner       string            `json:"owner"`        // 房主
+	Type        models.RoomType   `json:"type"`         // 房间类型
+	TypeName    string            `json:"type_name"`    // 房间类型名称
+	Status      models.RoomStatus `json:"status"`       // 房间状态
+	StatusName  string            `json:"status_name"`  // 房间状态名称
+	MaxPlayers  int               `json:"max_players"`  // 最大玩家数
+	PlayerCount int               `json:"player_count"` // 当前玩家数
+	HasPassword bool              `json:"has_password"` // 是否有密码
+	CreatedAt   string            `json:"created_at"`   // 创建时间
+	UpdatedAt   string            `json:"updated_at"`   // 更新时间
 }
 
 // GameStateData 游戏状态数据
 type GameStateData struct {
-	GameID        string                   `json:"game_id"`         // 游戏ID
-	Status        models.GameStatus        `json:"status"`          // 游戏状态
-	StatusName    string                   `json:"status_name"`     // 游戏状态名称
-	CurrentTurn   models.PlayerPosition    `json:"current_turn"`    // 当前回合
-	LastPlayCards []models.Card            `json:"last_play_cards"` // 上一次出的牌
-	LastPlayer    models.PlayerPosition    `json:"last_player"`     // 上次出牌的玩家
-	Players       []interface{}            `json:"players"`         // 玩家信息
-	LandlordCards []models.Card            `json:"landlord_cards"`  // 地主牌
-	CreatedAt     string                   `json:"created_at"`      // 创建时间
-	StartedAt     *string                  `json:"started_at"`      // 开始时间
-	FinishedAt    *string                  `json:"finished_at"`     // 结束时间
-	Winner        models.PlayerPosition    `json:"winner"`          // 获胜者
+	GameID        string                `json:"game_id"`         // 游戏ID
+	Status        models.GameStatus     `json:"status"`          // 游戏状态
+	StatusName    string                `json:"status_name"`     // 游戏状态名称
+	CurrentTurn   models.PlayerPosition `json:"current_turn"`    // 当前回合
+	LastPlayCards []models.Card         `json:"last_play_cards"` // 上一次出的牌
+	LastPlayer    models.PlayerPosition `json:"last_player"`     // 上次出牌的玩家
+	Players       []interface{}         `json:"players"`         // 玩家信息
+	LandlordCards []models.Card         `json:"landlord_cards"`  // 地主牌
+	CreatedAt     string                `json:"created_at"`      // 创建时间
+	StartedAt     *string               `json:"started_at"`      // 开始时间
+	FinishedAt    *string               `json:"finished_at"`     // 结束时间
+	Winner        models.PlayerPosition `json:"winner"`          // 获胜者
 }
 
 // PlayerHandData 玩家手牌数据
@@ -205,6 +211,11 @@ func SetReadySuccess() BaseResponse {
 // StartGameSuccess 开始游戏成功响应
 func StartGameSuccess() BaseResponse {
 	return SuccessWithMessage(nil, "游戏开始")
+}
+
+// DeleteRoomSuccess 删除房间成功响应
+func DeleteRoomSuccess() BaseResponse {
+	return SuccessWithMessage(nil, "删除房间成功")
 }
 
 // CallLandlordSuccess 叫地主成功响应

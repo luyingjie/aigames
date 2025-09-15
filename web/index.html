@@ -86,8 +86,14 @@
                         </div>
                         <div style="text-align: center;">
                             <button @click="joinRoom(room)" class="btn btn-secondary"
-                                    :disabled="room.player_count >= room.max_players">
-                                {{ room.player_count >= room.max_players ? '房间已满' : '加入房间' }}
+                                    :disabled="room.player_count >= room.max_players || room.status === 2">
+                                {{ room.status === 2 ? '游戏中' : (room.player_count >= room.max_players ? '房间已满' : '加入房间') }}
+                            </button>
+                            <button v-if="room.owner === currentUser.name" 
+                                    @click="deleteRoom(room)" 
+                                    class="btn btn-danger"
+                                    style="margin-left: 10px;">
+                                删除
                             </button>
                         </div>
                     </div>

@@ -196,6 +196,56 @@ func (h *Room) GetRoomList(s *session.Session, req *protocol.GetRoomListRequest)
 	return s.Response(resp)
 }
 
+// DeleteRoom 删除房间
+func (h *Room) DeleteRoom(s *session.Session, req *protocol.DeleteRoomRequest) error {
+	logger.Info("删除房间请求: %s", req.RoomID)
+
+	// 验证请求参数
+	if err := protocol.ValidateRequest(req); err != nil {
+		resp := protocol.BadRequest(err.Error())
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	// 获取用户名
+	username := s.String("username")
+	if username == "" {
+		resp := protocol.Unauthorized("请先登录")
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	// 获取房间信息
+	room, err := h.roomService.GetRoom(req.RoomID)
+	if err != nil {
+		resp := protocol.RoomNotFound()
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	// 检查是否是房主
+	if room.Owner != username {
+		resp := protocol.Forbidden("只有房主可以删除房间")
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	// 删除房间
+	err = h.roomService.DeleteRoom(req.RoomID)
+	if err != nil {
+		logger.Error("删除房间失败: %v", err)
+		resp := protocol.InternalServerError("删除房间失败")
+		resp.SetRequestId(req.RequestId)
+		return s.Response(resp)
+	}
+
+	resp := protocol.DeleteRoomSuccess()
+	resp.SetRequestId(req.RequestId)
+
+	logger.Info("用户 %s 删除房间成功: %s", username, req.RoomID)
+	return s.Response(resp)
+}
+
 // SetReady 设置准备状态
 func (h *Room) SetReady(s *session.Session, req *protocol.SetReadyRequest) error {
 	logger.Info("设置准备状态请求: %s, ready=%t", req.RoomID, req.Ready)
