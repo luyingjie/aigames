@@ -18,9 +18,9 @@ type LoginData struct {
 // SignupRequest 注册请求
 type SignupRequest struct {
 	BaseRequest
-	Name     string `json:"name" validate:"required,min=1,max=50"`      // 用户名
-	Password string `json:"password" validate:"required,min=6,max=50"`  // 密码
-	Age      int    `json:"age" validate:"required,min=1,max=150"`      // 年龄
+	Name     string `json:"name" validate:"required,min=1,max=50"`     // 用户名
+	Password string `json:"password" validate:"required,min=6,max=50"` // 密码
+	Age      int    `json:"age" validate:"required,min=1,max=150"`     // 年龄
 }
 
 // SignupResponse 注册响应数据
