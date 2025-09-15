@@ -52,6 +52,8 @@ func main() {
 
 	// 创建服务实例
 	userService := services.NewUserService(db.GetBoltDB())
+	roomService := services.NewRoomService(db.GetBoltDB())
+	gameService := services.NewGameService(db.GetBoltDB(), roomService)
 
 	// 启动静态文件服务器为前端页面提供服务
 	go func() {
@@ -66,6 +68,12 @@ func main() {
 	components := &component.Components{}
 	components.Register(handlers.NewUser(userService),
 		component.WithName("user"),
+	)
+	components.Register(handlers.NewRoom(roomService, gameService),
+		component.WithName("room"),
+	)
+	components.Register(handlers.NewGame(gameService, roomService),
+		component.WithName("game"),
 	)
 
 	// 启动nano WebSocket服务器

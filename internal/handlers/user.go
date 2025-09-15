@@ -3,10 +3,9 @@ package handlers
 import (
 	"time"
 
-	dbmodels "aigames/internal/models"
+	"aigames/internal/models"
 	"aigames/internal/services"
 	"aigames/pkg/logger"
-	"aigames/pkg/models"
 	"aigames/pkg/protocol"
 
 	"github.com/lonng/nano/component"
@@ -26,7 +25,7 @@ func NewUser(userService *services.UserService) *User {
 }
 
 // Login 登录处理方法
-func (h *User) Login(s *session.Session, req *models.LoginRequest) error {
+func (h *User) Login(s *session.Session, req *protocol.LoginRequest) error {
 	logger.Info("用户登录请求: %s", req.Name)
 
 	// 验证请求参数
@@ -57,8 +56,11 @@ func (h *User) Login(s *session.Session, req *models.LoginRequest) error {
 		logger.Error("更新登录时间失败: %v", err)
 	}
 
+	// 登录成功，保存用户信息到session
+	s.Set("username", user.Name)
+
 	// 登录成功
-	resp := models.LoginSuccess(user.Name, user.Age)
+	resp := protocol.LoginSuccess(user.Name, user.Age)
 	resp.SetRequestId(req.RequestId)
 
 	logger.Info("用户 %s 登录成功", req.Name)
@@ -66,7 +68,7 @@ func (h *User) Login(s *session.Session, req *models.LoginRequest) error {
 }
 
 // Signup 注册处理方法
-func (h *User) Signup(s *session.Session, req *models.SignupRequest) error {
+func (h *User) Signup(s *session.Session, req *protocol.SignupRequest) error {
 	logger.Info("用户注册请求: %s", req.Name)
 
 	// 验证请求参数
@@ -84,7 +86,7 @@ func (h *User) Signup(s *session.Session, req *models.SignupRequest) error {
 	}
 
 	// 创建新用户
-	user := &dbmodels.User{
+	user := &models.User{
 		Name:        req.Name,
 		Password:    h.userService.HashPassword(req.Password),
 		Age:         req.Age,
@@ -101,7 +103,7 @@ func (h *User) Signup(s *session.Session, req *models.SignupRequest) error {
 	}
 
 	// 注册成功
-	resp := models.SignupSuccess(user.Name)
+	resp := protocol.SignupSuccess(user.Name)
 	resp.SetRequestId(req.RequestId)
 
 	logger.Info("用户 %s 注册成功", req.Name)
