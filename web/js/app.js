@@ -57,6 +57,69 @@ const app = createApp({
             return players.length === 3 && players.every(p => p.is_ready);
         });
 
+        // 获取底部玩家位置（当前用户始终在底部）
+        const getBottomPlayerPosition = () => {
+            return 0; // 固定返回0，因为底部位置在UI上是固定的
+        };
+
+        // 获取左侧玩家位置
+        const getLeftPlayerPosition = () => {
+            if (!gameState.value || !currentUser.value) return 1;
+            const myPlayer = gameState.value.players?.find(p => p && p.username === currentUser.value.name);
+            if (!myPlayer) return 1;
+            // 左侧是当前用户位置-1（循环）
+            return (myPlayer.position + 2) % 3;
+        };
+
+        // 获取右侧玩家位置
+        const getRightPlayerPosition = () => {
+            if (!gameState.value || !currentUser.value) return 2;
+            const myPlayer = gameState.value.players?.find(p => p && p.username === currentUser.value.name);
+            if (!myPlayer) return 2;
+            // 右侧是当前用户位置+1（循环）
+            return (myPlayer.position + 1) % 3;
+        };
+
+        // 根据位置获取玩家信息
+        const getPlayerByPosition = (uiPosition) => {
+            if (!gameState.value || !gameState.value.players) return null;
+            
+            // 如果没有登录用户，直接返回对应位置的玩家
+            if (!currentUser.value) return gameState.value.players[uiPosition];
+            
+            // 查找当前用户在玩家列表中的位置
+            const myPlayer = gameState.value.players?.find(p => p && p.username === currentUser.value.name);
+            if (!myPlayer) return gameState.value.players[uiPosition];
+            
+            // 调整位置映射，使当前用户始终显示在底部
+            let gamePosition = uiPosition;
+            if (uiPosition === 0) { // 底部位置（显示当前用户）
+                gamePosition = myPlayer.position;
+            } else if (uiPosition === 1) { // 左侧位置
+                gamePosition = (myPlayer.position + 2) % 3;
+            } else if (uiPosition === 2) { // 右侧位置
+                gamePosition = (myPlayer.position + 1) % 3;
+            }
+            
+            const player = gameState.value.players[gamePosition];
+            if (player) {
+                // 添加card_count属性用于显示
+                return {
+                    ...player,
+                    card_count: player.cards ? player.cards.length : (player.card_count || 0),
+                    role_name: player.role === 1 ? '地主' : (player.role === 2 ? '农民' : '观众')
+                };
+            }
+            return player;
+        };
+
+        // 根据位置获取玩家名称
+        const getPlayerNameByPosition = (position) => {
+            if (!gameState.value || !gameState.value.players) return '未知玩家';
+            const player = gameState.value.players[position];
+            return player ? player.username : '未知玩家';
+        };
+
         // nano相关方法
         const initNano = () => {
             return new Promise((resolve, reject) => {
@@ -503,6 +566,11 @@ const app = createApp({
             isMyTurn,
             myPlayerPosition,
             allPlayersReady,
+            getBottomPlayerPosition,
+            getLeftPlayerPosition,
+            getRightPlayerPosition,
+            getPlayerByPosition,
+            getPlayerNameByPosition,
             submitAuth,
             toggleAuthMode,
             logout,

@@ -113,36 +113,44 @@
                     </div>
 
                     <div v-if="error" class="error">{{ error }}</div>
+                    
+                    <!-- 游戏结束提示 -->
+                    <div v-if="gameState?.status === 5" class="success" style="text-align: center; padding: 20px; font-size: 1.2em;">
+                        <h3>🎉 游戏结束！</h3>
+                        <p>获胜者: 玩家{{ (gameState.winner + 1) }} ({{ getPlayerNameByPosition(gameState.winner) }})</p>
+                        <p>{{ gameState.status_name }}</p>
+                    </div>
 
                     <!-- 游戏桌面 -->
                     <div class="game-table">
-                        <!-- 玩家位置 -->
-                        <div class="player-position position-bottom" :class="{ landlord: gameState?.players[0]?.role === 1 }">
-                            <div v-if="gameState?.players[0]">
-                                {{ gameState.players[0].username }}
-                                <div>{{ gameState.players[0].role_name }}</div>
-                                <div>手牌: {{ gameState.players[0].card_count }}</div>
-                                <div v-if="gameState.players[0].is_ready">✓ 已准备</div>
+                        <!-- 玩家位置 (根据当前用户位置调整显示) -->
+                        <div class="player-position position-bottom" :class="{ landlord: getPlayerByPosition(0)?.role === 1 }">
+                            <div v-if="getPlayerByPosition(0)">
+                                {{ getPlayerByPosition(0).username }} 
+                                <span v-if="getPlayerByPosition(0).username === currentUser.name">(你)</span>
+                                <div>{{ getPlayerByPosition(0).role_name }}</div>
+                                <div>手牌: {{ getPlayerByPosition(0).card_count }}</div>
+                                <div v-if="getPlayerByPosition(0).is_ready">✓ 已准备</div>
                             </div>
                             <div v-else>等待玩家...</div>
                         </div>
 
-                        <div class="player-position position-left" :class="{ landlord: gameState?.players[1]?.role === 1 }">
-                            <div v-if="gameState?.players[1]">
-                                {{ gameState.players[1].username }}
-                                <div>{{ gameState.players[1].role_name }}</div>
-                                <div>手牌: {{ gameState.players[1].card_count }}</div>
-                                <div v-if="gameState.players[1].is_ready">✓ 已准备</div>
+                        <div class="player-position position-left" :class="{ landlord: getPlayerByPosition(1)?.role === 1 }">
+                            <div v-if="getPlayerByPosition(1)">
+                                {{ getPlayerByPosition(1).username }}
+                                <div>{{ getPlayerByPosition(1).role_name }}</div>
+                                <div>手牌: {{ getPlayerByPosition(1).card_count }}</div>
+                                <div v-if="getPlayerByPosition(1).is_ready">✓ 已准备</div>
                             </div>
                             <div v-else>等待玩家...</div>
                         </div>
 
-                        <div class="player-position position-right" :class="{ landlord: gameState?.players[2]?.role === 1 }">
-                            <div v-if="gameState?.players[2]">
-                                {{ gameState.players[2].username }}
-                                <div>{{ gameState.players[2].role_name }}</div>
-                                <div>手牌: {{ gameState.players[2].card_count }}</div>
-                                <div v-if="gameState.players[2].is_ready">✓ 已准备</div>
+                        <div class="player-position position-right" :class="{ landlord: getPlayerByPosition(2)?.role === 1 }">
+                            <div v-if="getPlayerByPosition(2)">
+                                {{ getPlayerByPosition(2).username }}
+                                <div>{{ getPlayerByPosition(2).role_name }}</div>
+                                <div>手牌: {{ getPlayerByPosition(2).card_count }}</div>
+                                <div v-if="getPlayerByPosition(2).is_ready">✓ 已准备</div>
                             </div>
                             <div v-else>等待玩家...</div>
                         </div>
@@ -151,7 +159,7 @@
                         <div class="game-center">
                             <div>{{ gameState?.status_name || '等待开始' }}</div>
                             <div v-if="gameState?.current_turn !== undefined">
-                                当前回合: 玩家{{ gameState.current_turn + 1 }}
+                                当前回合: 玩家{{ gameState.current_turn + 1 }} ({{ getPlayerNameByPosition(gameState.current_turn) }})
                             </div>
                             <div v-if="gameState?.landlord_cards && gameState.landlord_cards.length > 0">
                                 <div style="margin-top: 10px;">地主牌:</div>
@@ -167,7 +175,7 @@
 
                     <!-- 上一次出牌 -->
                     <div v-if="gameState?.last_play_cards && gameState.last_play_cards.length > 0" class="last-cards">
-                        <div class="last-cards-title">上一手牌 (玩家{{ gameState.last_player + 1 }})</div>
+                        <div class="last-cards-title">上一手牌 (玩家{{ gameState.last_player + 1 }} - {{ getPlayerNameByPosition(gameState.last_player) }})</div>
                         <div class="playing-cards">
                             <div v-for="(card, index) in gameState.last_play_cards" :key="'last-' + index"
                                  :class="['card-item', getCardColor(card)]">
