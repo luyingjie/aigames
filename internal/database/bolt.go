@@ -1,13 +1,22 @@
 package database
 
 import (
-	"aigames/pkg/constants"
 	"aigames/pkg/logger"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
+)
+
+// 数据库存储桶名称
+const (
+	BucketUsers     = "users"      // 用户数据
+	BucketGames     = "games"      // 游戏记录
+	BucketRooms     = "rooms"      // 房间数据
+	BucketAIPlayers = "ai_players" // AI玩家
+	BucketChats     = "chats"      // 聊天记录
+	BucketConfigs   = "configs"    // 系统配置
 )
 
 // DB 数据库连接包装器
@@ -44,12 +53,12 @@ func NewDB(dbPath string) (*DB, error) {
 // initBuckets 初始化数据库存储桶
 func (db *DB) initBuckets() error {
 	buckets := []string{
-		constants.BucketUsers,
-		constants.BucketGames,
-		constants.BucketRooms,
-		constants.BucketAIPlayers,
-		constants.BucketChats,
-		constants.BucketConfigs,
+		BucketUsers,
+		BucketGames,
+		BucketRooms,
+		BucketAIPlayers,
+		BucketChats,
+		BucketConfigs,
 	}
 
 	return db.conn.Update(func(tx *bolt.Tx) error {

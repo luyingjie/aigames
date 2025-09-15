@@ -143,8 +143,8 @@
         </div>
     </div>
 
-    <script src="./nano-websocket-client/protocol.js"></script>
-    <script src="./nano-websocket-client/nano-websocket-client.js"></script>
+    <script src="./js/protocol.js"></script>
+    <script src="./js/nano-websocket-client.js"></script>
     <script>
         var nano = window.nano;
         var connected = false;
@@ -251,7 +251,7 @@
             }, function(data) {
                 addLog(`登录响应: ${JSON.stringify(data)}`, 'response');
                 if (data.code === 200) {
-                    addLog(`🎉 ${data.msg} - 欢迎 ${data.name}! 年龄: ${data.age}`, 'response');
+                    addLog(`🎉 ${data.message} - 欢迎 ${data.data.name}! 年龄: ${data.data.age}`, 'response');
                 } else {
                     addLog(`❌ 登录失败: ${data.msg}`, 'error');
                 }
