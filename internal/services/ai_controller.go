@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"aigames/internal/ai"
 	"aigames/internal/models"
 	"aigames/pkg/logger"
 )
@@ -74,14 +75,19 @@ func (c *AIController) executeAction() error {
 		return fmt.Errorf("获取游戏对象失败: %w", err)
 	}
 
+	// 创建玩家包装器
+	playerWrapper := &ai.PlayerWrapper{
+		UserName: c.player.UserName,
+	}
+
 	switch game.Status {
 	case models.GameStatusCalling:
 		// 叫地主阶段：AI永远不叫地主
-		return c.callLandlord(false)
+		return ai.CallLandlord(playerWrapper, c.gameService, c.roomID, false)
 
 	case models.GameStatusPlaying:
 		// 出牌阶段：AI永远过牌
-		return c.passTurn()
+		return ai.PassTurn(playerWrapper, c.gameService, c.roomID)
 
 	default:
 		logger.Info("AI玩家 %s 在状态 %d 下无需操作", c.player.UserName, game.Status)
@@ -89,18 +95,17 @@ func (c *AIController) executeAction() error {
 	}
 }
 
-// callLandlord AI叫地主操作
-func (c *AIController) callLandlord(call bool) error {
-	logger.Info("AI玩家 %s 叫地主: %t", c.player.UserName, call)
-
-	// 调用GameService的叫地主方法
-	return c.gameService.CallLandlord(c.roomID, c.player.UserName, call)
+// GetPlayer 获取AI玩家信息
+func (c *AIController) GetPlayer() *models.GamePlayer {
+	return c.player
 }
 
-// passTurn AI过牌操作
-func (c *AIController) passTurn() error {
-	logger.Info("AI玩家 %s 过牌", c.player.UserName)
+// GetGameService 获取游戏服务
+func (c *AIController) GetGameService() *GameService {
+	return c.gameService
+}
 
-	// 调用GameService的过牌方法
-	return c.gameService.PassTurn(c.roomID, c.player.UserName)
+// GetRoomID 获取房间ID
+func (c *AIController) GetRoomID() string {
+	return c.roomID
 }
