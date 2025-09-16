@@ -10,7 +10,10 @@
       "Bash(go build:*)",
       "Bash(dir:*)",
       "Bash(timeout 5 go run main.go)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(.aigames.exe)",
+      "Bash(aigames.exe)",
+      "Bash(timeout 10 go run main.go)"
     ],
     "deny": [],
     "ask": []

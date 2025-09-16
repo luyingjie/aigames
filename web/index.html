@@ -132,8 +132,9 @@
                         <!-- 玩家位置 (根据当前用户位置调整显示) -->
                         <div class="player-position position-bottom" :class="{ landlord: getPlayerByPosition(0)?.role === 1 }">
                             <div v-if="getPlayerByPosition(0)">
-                                {{ getPlayerByPosition(0).username }} 
+                                {{ getPlayerByPosition(0).username }}
                                 <span v-if="getPlayerByPosition(0).username === currentUser.name">(你)</span>
+                                <span v-if="getPlayerByPosition(0).is_ai" style="color: #ff9800;">🤖 AI</span>
                                 <div>{{ getPlayerByPosition(0).role_name }}</div>
                                 <div>手牌: {{ getPlayerByPosition(0).card_count }}</div>
                                 <div v-if="getPlayerByPosition(0).is_ready">✓ 已准备</div>
@@ -144,6 +145,7 @@
                         <div class="player-position position-left" :class="{ landlord: getPlayerByPosition(1)?.role === 1 }">
                             <div v-if="getPlayerByPosition(1)">
                                 {{ getPlayerByPosition(1).username }}
+                                <span v-if="getPlayerByPosition(1).is_ai" style="color: #ff9800;">🤖 AI</span>
                                 <div>{{ getPlayerByPosition(1).role_name }}</div>
                                 <div>手牌: {{ getPlayerByPosition(1).card_count }}</div>
                                 <div v-if="getPlayerByPosition(1).is_ready">✓ 已准备</div>
@@ -154,6 +156,7 @@
                         <div class="player-position position-right" :class="{ landlord: getPlayerByPosition(2)?.role === 1 }">
                             <div v-if="getPlayerByPosition(2)">
                                 {{ getPlayerByPosition(2).username }}
+                                <span v-if="getPlayerByPosition(2).is_ai" style="color: #ff9800;">🤖 AI</span>
                                 <div>{{ getPlayerByPosition(2).role_name }}</div>
                                 <div>手牌: {{ getPlayerByPosition(2).card_count }}</div>
                                 <div v-if="getPlayerByPosition(2).is_ready">✓ 已准备</div>
@@ -241,6 +244,17 @@
                     <div v-if="createRoomForm.type === '1'" class="form-group">
                         <label>房间密码</label>
                         <input v-model="createRoomForm.password" type="password">
+                    </div>
+                    <div class="form-group">
+                        <label>AI玩家数量</label>
+                        <select v-model="createRoomForm.ai_count">
+                            <option value="0">无AI玩家</option>
+                            <option value="1">1个AI玩家</option>
+                            <option value="2">2个AI玩家</option>
+                        </select>
+                        <small style="display: block; color: #666; margin-top: 5px;">
+                            添加AI玩家可以让你独自练习或在人数不足时游戏
+                        </small>
                     </div>
                     <div style="text-align: center;">
                         <button type="submit" class="btn btn-primary" :disabled="loading">

@@ -10,6 +10,7 @@ type CreateRoomRequest struct {
 	Name     string          `json:"name" validate:"required,min=1,max=50"` // 房间名称
 	Type     models.RoomType `json:"type"`                                  // 房间类型
 	Password string          `json:"password,omitempty" validate:"max=20"`  // 房间密码（可选）
+	AICount  int             `json:"ai_count" validate:"min=0,max=2"`       // AI玩家数量
 }
 
 // JoinRoomRequest 加入房间请求

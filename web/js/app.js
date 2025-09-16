@@ -27,7 +27,8 @@ const app = createApp({
         const createRoomForm = ref({
             name: '',
             type: '0',
-            password: ''
+            password: '',
+            ai_count: 0
         });
 
         // 游戏相关
@@ -312,14 +313,15 @@ const app = createApp({
                 const response = await request('room.CreateRoom', {
                     name: createRoomForm.value.name,
                     type: parseInt(createRoomForm.value.type),
-                    password: createRoomForm.value.password
+                    password: createRoomForm.value.password,
+                    ai_count: parseInt(createRoomForm.value.ai_count)
                 });
 
                 if (response.code === 200) {
                     currentRoom.value = response.data;
                     currentView.value = 'game';
                     showCreateRoomModal.value = false;
-                    createRoomForm.value = { name: '', type: '0', password: '' };
+                    createRoomForm.value = { name: '', type: '0', password: '', ai_count: 0 };
                     await getGameState();
                     startGameStatePolling();
                 } else {

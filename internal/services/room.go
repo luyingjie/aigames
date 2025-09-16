@@ -49,7 +49,7 @@ func (rs *RoomService) loadRoomsFromDB() {
 }
 
 // CreateRoom 创建房间
-func (rs *RoomService) CreateRoom(id, name, owner string, roomType models.RoomType, password string) (*models.Room, error) {
+func (rs *RoomService) CreateRoom(id, name, owner string, roomType models.RoomType, password string, aiCount int) (*models.Room, error) {
 	rs.mutex.Lock()
 	defer rs.mutex.Unlock()
 
@@ -61,6 +61,38 @@ func (rs *RoomService) CreateRoom(id, name, owner string, roomType models.RoomTy
 	// 创建新房间
 	room := models.NewRoom(id, name, owner, roomType, password)
 	rs.rooms[id] = room
+
+	// 如果指定了AI玩家数量，自动创建AI玩家
+	if aiCount > 0 {
+		// 启动游戏以便添加AI玩家
+		room.StartGame()
+		game := room.CurrentGame
+
+		// 创建AI玩家
+		for i := 0; i < aiCount && i < 2; i++ { // 最多2个AI玩家
+			aiName := fmt.Sprintf("AI-%d", i+1)
+
+			// 找到空位置加入AI玩家
+			for pos := models.Position1; pos <= models.Position3; pos++ {
+				if game.GetPlayer(pos) == nil {
+					if game.AddPlayer(aiName, pos) {
+						// 将AI玩家标记为AI
+						player := game.GetPlayer(pos)
+						if player != nil {
+							player.IsAI = true
+							player.IsReady = true // AI玩家默认准备
+						}
+						break
+					}
+				}
+			}
+		}
+
+		// 更新房间状态
+		if room.GetPlayerCount() > 0 {
+			room.Status = models.RoomStatusWaiting
+		}
+	}
 
 	// 保存到数据库
 	if err := rs.saveRoomToDB(room); err != nil {

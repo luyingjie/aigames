@@ -13,18 +13,20 @@ import (
 
 // GameService 游戏服务
 type GameService struct {
-	db         *bbolt.DB
-	roomService *RoomService
-	games      map[string]*models.Game // 内存中的游戏缓存
-	mutex      sync.RWMutex           // 读写锁
+	db            *bbolt.DB
+	roomService   *RoomService
+	games         map[string]*models.Game       // 内存中的游戏缓存
+	aiControllers map[string]*AIController      // AI控制器映射 key: playerName, value: controller
+	mutex         sync.RWMutex                  // 读写锁
 }
 
 // NewGameService 创建游戏服务实例
 func NewGameService(db *bbolt.DB, roomService *RoomService) *GameService {
 	return &GameService{
-		db:         db,
-		roomService: roomService,
-		games:      make(map[string]*models.Game),
+		db:            db,
+		roomService:   roomService,
+		games:         make(map[string]*models.Game),
+		aiControllers: make(map[string]*AIController),
 	}
 }
 
@@ -75,6 +77,12 @@ func (gs *GameService) CallLandlord(roomID, username string, call bool) error {
 	gameLogic := models.NewGameLogic(game)
 	if err := gameLogic.CallLandlord(position, call); err != nil {
 		return err
+	}
+
+	// 检查是否轮到下一个玩家，如果是AI玩家则通知
+	currentPlayer := game.GetPlayer(game.CurrentTurn)
+	if currentPlayer != nil && currentPlayer.IsAI {
+		gs.NotifyAITurn(roomID, currentPlayer.UserName)
 	}
 
 	// 更新房间状态
@@ -154,6 +162,15 @@ func (gs *GameService) PlayCards(roomID, username string, cards []models.Card) e
 		// 结束房间游戏
 		room, _ := gs.roomService.GetRoom(roomID)
 		room.EndGame()
+
+		// 停止AI控制器
+		gs.StopAIControllers(roomID)
+	} else {
+		// 如果游戏继续，检查是否轮到AI玩家
+		currentPlayer := game.GetPlayer(game.CurrentTurn)
+		if currentPlayer != nil && currentPlayer.IsAI {
+			gs.NotifyAITurn(roomID, currentPlayer.UserName)
+		}
 	}
 
 	// 更新房间状态
@@ -198,6 +215,12 @@ func (gs *GameService) PassTurn(roomID, username string) error {
 		game.LastPlayCards = nil
 		game.CurrentTurn = game.LastPlayer
 		game.AddLog("new_round", game.LastPlayer, nil, "新一轮开始")
+	}
+
+	// 检查是否轮到AI玩家
+	currentPlayer := game.GetPlayer(game.CurrentTurn)
+	if currentPlayer != nil && currentPlayer.IsAI {
+		gs.NotifyAITurn(roomID, currentPlayer.UserName)
 	}
 
 	// 更新房间状态
@@ -321,4 +344,63 @@ func (gs *GameService) GetGameState(roomID, username string) (map[string]interfa
 	}
 
 	return state, nil
+}
+
+// StartAIControllers 为房间中的AI玩家启动控制器
+func (gs *GameService) StartAIControllers(roomID string) error {
+	game, err := gs.GetGameByRoom(roomID)
+	if err != nil {
+		return err
+	}
+
+	for _, player := range game.Players {
+		if player != nil && player.IsAI {
+			// 创建并启动AI控制器
+			controller := NewAIController(player, gs, roomID)
+			gs.aiControllers[player.UserName] = controller
+
+			// 在独立的goroutine中启动控制器
+			go controller.Start()
+
+			logger.Info("为AI玩家 %s 启动控制器", player.UserName)
+		}
+	}
+
+	return nil
+}
+
+// StopAIControllers 停止房间中所有AI控制器
+func (gs *GameService) StopAIControllers(roomID string) {
+	game, err := gs.GetGameByRoom(roomID)
+	if err != nil {
+		return
+	}
+
+	for _, player := range game.Players {
+		if player != nil && player.IsAI {
+			if controller, exists := gs.aiControllers[player.UserName]; exists {
+				controller.Stop()
+				delete(gs.aiControllers, player.UserName)
+				logger.Info("停止AI玩家 %s 的控制器", player.UserName)
+			}
+		}
+	}
+}
+
+// NotifyAITurn 通知AI玩家轮到其行动
+func (gs *GameService) NotifyAITurn(roomID string, playerName string) {
+	if controller, exists := gs.aiControllers[playerName]; exists {
+		controller.NotifyTurn()
+	}
+}
+
+// IsAIPlayer 检查是否为AI玩家
+func (gs *GameService) IsAIPlayer(roomID string, playerName string) bool {
+	game, err := gs.GetGameByRoom(roomID)
+	if err != nil {
+		return false
+	}
+
+	player := game.GetPlayerByName(playerName)
+	return player != nil && player.IsAI
 }

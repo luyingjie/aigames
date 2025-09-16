@@ -51,7 +51,7 @@ func (h *Room) CreateRoom(s *session.Session, req *protocol.CreateRoomRequest) e
 	roomID := fmt.Sprintf("room_%d", time.Now().Unix())
 
 	// 创建房间
-	room, err := h.roomService.CreateRoom(roomID, req.Name, username, req.Type, req.Password)
+	room, err := h.roomService.CreateRoom(roomID, req.Name, username, req.Type, req.Password, req.AICount)
 	if err != nil {
 		logger.Error("创建房间失败: %v", err)
 		resp := protocol.InternalServerError("创建房间失败")
@@ -330,6 +330,20 @@ func (h *Room) StartGame(s *session.Session, req *protocol.StartGameRequest) err
 		resp := protocol.BadRequest(err.Error())
 		resp.SetRequestId(req.RequestId)
 		return s.Response(resp)
+	}
+
+	// 启动AI控制器
+	if err := h.gameService.StartAIControllers(req.RoomID); err != nil {
+		logger.Error("启动AI控制器失败: %v", err)
+	}
+
+	// 检查是否第一个玩家是AI，如果是则通知其行动
+	game, err := h.gameService.GetGameByRoom(req.RoomID)
+	if err == nil {
+		currentPlayer := game.GetPlayer(game.CurrentTurn)
+		if currentPlayer != nil && currentPlayer.IsAI {
+			h.gameService.NotifyAITurn(req.RoomID, currentPlayer.UserName)
+		}
 	}
 
 	resp := protocol.StartGameSuccess()

@@ -62,6 +62,7 @@ type GamePlayer struct {
 	Cards        []Card         `json:"cards"`         // 手牌
 	IsReady      bool           `json:"is_ready"`      // 是否准备
 	IsOnline     bool           `json:"is_online"`     // 是否在线
+	IsAI         bool           `json:"is_ai"`         // 是否为AI玩家
 	Score        int            `json:"score"`         // 得分
 	CallLandlord bool           `json:"call_landlord"` // 是否叫过地主
 }
