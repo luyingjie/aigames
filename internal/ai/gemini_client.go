@@ -131,13 +131,19 @@ func (c *GeminiClient) Chat(messages []Message) (string, error) {
 	}
 
 	if len(geminiResponse.Candidates) == 0 {
+		logger.Warn("Gemini API返回空的candidates数组, 响应体: %s", string(body))
 		return "", fmt.Errorf("API返回空结果")
 	}
 
+	candidate := geminiResponse.Candidates[0]
+	logger.Info("Gemini API响应, finishReason: %s", candidate.FinishReason)
+
 	// 提取回复文本
 	var responseText string
-	if len(geminiResponse.Candidates[0].Content.Parts) > 0 {
-		responseText = geminiResponse.Candidates[0].Content.Parts[0].Text
+	if candidate.FinishReason == "STOP" && len(candidate.Content.Parts) > 0 {
+		responseText = candidate.Content.Parts[0].Text
+	} else {
+		logger.Warn("Gemini API返回了非STOP的finishReason或空的parts, 响应体: %s", string(body))
 	}
 
 	logger.Info("Gemini API调用成功，使用token: %d", geminiResponse.UsageMetadata.TotalTokenCount)
