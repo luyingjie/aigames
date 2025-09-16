@@ -267,6 +267,16 @@ func (g *Game) IsAllReady() bool {
 	return true
 }
 
+// GetLandlord 获取地主玩家
+func (g *Game) GetLandlord() *GamePlayer {
+	for _, player := range g.Players {
+		if player != nil && player.Role == RoleLandlord {
+			return player
+		}
+	}
+	return nil
+}
+
 // NextTurn 下一个回合
 func (g *Game) NextTurn() {
 	g.CurrentTurn = (g.CurrentTurn + 1) % 3

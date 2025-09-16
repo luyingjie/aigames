@@ -20,6 +20,9 @@ type GeminiClient struct {
 
 // NewGeminiClient 创建Gemini API客户端
 func NewGeminiClient(aiConfig *config.AIConfig) *GeminiClient {
+	if aiConfig.APIKey == "" {
+		logger.Fatal("Gemini API key is not configured in config.yaml")
+	}
 	return &GeminiClient{
 		config: aiConfig,
 		client: &http.Client{
@@ -122,6 +125,7 @@ func (c *GeminiClient) Chat(messages []Message) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Gemini API Error Response:", string(body))
 		return "", fmt.Errorf("API返回错误: %s, 状态码: %d", string(body), resp.StatusCode)
 	}
 

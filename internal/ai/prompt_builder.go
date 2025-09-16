@@ -56,10 +56,10 @@ func (pb *PromptBuilder) BuildCallLandlordPrompt(player *models.GamePlayer, game
 
 	if pb.provider == "gemini" {
 		sb.WriteString("\n请分析你的手牌，判断是否叫地主。")
-		sb.WriteString("\n回答格式：只回答'叫地主'或'不叫'，不要包含其他内容。")
+		sb.WriteString("\n你的回答必须严格遵循以下格式之一：'叫地主' 或 '不叫'。不要包含任何解释或额外的文字。")
 	} else {
 		sb.WriteString("\n请分析你的手牌，判断是否叫地主。")
-		sb.WriteString("\n回答格式：只回答'叫地主'或'不叫'，不要包含其他内容。")
+		sb.WriteString("\n你的回答必须严格遵循以下格式之一：'叫地主' 或 '不叫'。不要包含任何解释或额外的文字。")
 	}
 
 	return sb.String()
@@ -78,23 +78,27 @@ func (pb *PromptBuilder) BuildPlayCardPrompt(player *models.GamePlayer, game *mo
 	sb.WriteString(fmt.Sprintf("- 手牌：%s\n", pb.formatCards(player.Cards)))
 
 	sb.WriteString("\n游戏状态：\n")
+	landlord := game.GetLandlord()
+	if landlord != nil {
+		sb.WriteString(fmt.Sprintf("- 地主是: %s\n", landlord.UserName))
+	}
 	sb.WriteString(fmt.Sprintf("- 当前回合：%s\n", getPlayerNameByPosition(game, game.CurrentTurn)))
 	sb.WriteString(fmt.Sprintf("- 上一手牌（%s）：%s\n", getPlayerNameByPosition(game, game.LastPlayer), pb.formatCards(game.LastPlayCards)))
 
-	sb.WriteString("\n其他玩家手牌数量：\n")
+	sb.WriteString("\n其他玩家信息：\n")
 	for _, p := range game.Players {
 		if p != nil && p.UserName != player.UserName {
-			sb.WriteString(fmt.Sprintf("- %s：%d张\n", p.UserName, p.GetCardCount()))
+			sb.WriteString(fmt.Sprintf("- %s (%s)：%d张\n", p.UserName, models.RoleNames[p.Role], p.GetCardCount()))
 		}
 	}
 
 	if pb.provider == "gemini" {
 		sb.WriteString("\n请分析当前情况，决定出什么牌。")
-		sb.WriteString("\n回答格式：只回答'过牌'或'出牌:牌型'，例如'出牌:3,4,5'，不要包含其他内容。")
+		sb.WriteString("\n你的回答必须严格遵循以下格式之一：'过牌' 或 '出牌:牌1,牌2,牌3'。不要包含任何解释或额外的文字。")
 		sb.WriteString("\n注意：请确保选择的牌在你的手牌中，并且符合斗地主的出牌规则。")
 	} else {
 		sb.WriteString("\n请分析当前情况，决定出什么牌。")
-		sb.WriteString("\n回答格式：只回答'过牌'或'出牌:牌型'，例如'出牌:3,4,5'，不要包含其他内容。")
+		sb.WriteString("\n你的回答必须严格遵循以下格式之一：'过牌' 或 '出牌:牌1,牌2,牌3'。不要包含任何解释或额外的文字。")
 	}
 
 	return sb.String()

@@ -20,6 +20,9 @@ type APIClient struct {
 
 // NewAPIClient 创建AI API客户端
 func NewAPIClient(aiConfig *config.AIConfig) *APIClient {
+	if aiConfig.APIKey == "" {
+		logger.Fatal("OpenAI API key is not configured in config.yaml")
+	}
 	return &APIClient{
 		config: aiConfig,
 		client: &http.Client{
@@ -100,6 +103,7 @@ func (c *APIClient) Chat(messages []Message) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Println("OpenAI API Error Response:", string(body))
 		return "", fmt.Errorf("API返回错误: %s, 状态码: %d", string(body), resp.StatusCode)
 	}
 
