@@ -174,8 +174,10 @@
                                 <div style="margin-top: 10px;">地主牌:</div>
                                 <div class="playing-cards" style="margin: 0;">
                                     <div v-for="(card, index) in gameState.landlord_cards" :key="'landlord-' + index"
-                                         :class="['card-item', getCardColor(card)]">
-                                        {{ formatCard(card) }}
+                                         :class="['poker-card', getCardColorClass(card)]">
+                                        <div class="card-top">{{ formatCardValue(card) }}</div>
+                                        <div class="card-center">{{ formatCardSuit(card) }}</div>
+                                        <div class="card-bottom">{{ formatCardValue(card) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -187,8 +189,10 @@
                         <div class="last-cards-title">上一手牌 (玩家{{ gameState.last_player + 1 }} - {{ getPlayerNameByPosition(gameState.last_player) }})</div>
                         <div class="playing-cards">
                             <div v-for="(card, index) in gameState.last_play_cards" :key="'last-' + index"
-                                 :class="['card-item', getCardColor(card)]">
-                                {{ formatCard(card) }}
+                                 :class="['poker-card', getCardColorClass(card)]">
+                                <div class="card-top">{{ formatCardValue(card) }}</div>
+                                <div class="card-center">{{ formatCardSuit(card) }}</div>
+                                <div class="card-bottom">{{ formatCardValue(card) }}</div>
                             </div>
                         </div>
                     </div>
@@ -198,9 +202,11 @@
                         <h3>我的手牌 ({{ playerHand.length }}张)</h3>
                         <div class="playing-cards">
                             <div v-for="(card, index) in playerHand" :key="index"
-                                 :class="['card-item', getCardColor(card), { selected: selectedCards.includes(index) }]"
+                                 :class="['poker-card', getCardColorClass(card), { selected: selectedCards.includes(index) }]"
                                  @click="toggleCardSelection(index)">
-                                {{ formatCard(card) }}
+                                <div class="card-top">{{ formatCardValue(card) }}</div>
+                                <div class="card-center">{{ formatCardSuit(card) }}</div>
+                                <div class="card-bottom">{{ formatCardValue(card) }}</div>
                             </div>
                         </div>
 

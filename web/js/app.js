@@ -587,6 +587,62 @@ const app = createApp({
             return suits[card.suit] + values[card.value];
         };
 
+        // 新增：获取扑克牌花色
+        const formatCardSuit = (card) => {
+            const suits = { 1: '♠', 2: '♥', 3: '♦', 4: '♣', 5: '王' };
+            return suits[card.suit];
+        };
+
+        // 新增：获取扑克牌数值
+        const formatCardValue = (card) => {
+            const values = {
+                3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10',
+                11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2',
+                16: '小', 17: '大'
+            };
+            return values[card.value];
+        };
+
+        // 修改：获取扑克牌颜色类
+        const getCardColorClass = (card) => {
+            let classes = [];
+            
+            // 添加颜色类
+            if (card.suit === 5) {
+                // 王牌
+                classes.push('black', 'joker');
+                if (card.value === 16) {
+                    classes.push('small-joker');
+                } else if (card.value === 17) {
+                    classes.push('big-joker');
+                }
+            } else if (card.suit === 2 || card.suit === 3) {
+                // 红桃，方块
+                classes.push('red');
+            } else {
+                // 黑桃，梅花
+                classes.push('black');
+            }
+            
+            // 添加特殊牌面类
+            if (card.suit !== 5) {
+                const valueClasses = {
+                    11: 'jack',     // J
+                    12: 'queen',    // Q
+                    13: 'king',     // K
+                    14: 'ace',      // A
+                    15: 'two'       // 2
+                };
+                
+                if (valueClasses[card.value]) {
+                    classes.push(valueClasses[card.value]);
+                }
+            }
+            
+            return classes.join(' ');
+        };
+
+        // 保持原有函数不变
         const getCardColor = (card) => {
             if (card.suit === 2 || card.suit === 3) { // 红桃，方块
                 return 'red';
@@ -671,7 +727,11 @@ const app = createApp({
             playCards,
             passTurn,
             formatCard,
-            getCardColor
+            getCardColor,
+            // 添加新函数
+            getCardColorClass,
+            formatCardValue,
+            formatCardSuit
         };
     }
 });

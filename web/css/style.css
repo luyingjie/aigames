@@ -206,36 +206,241 @@ body {
 }
 
 .card-item {
-    width: 40px;
-    height: 60px;
+    width: 60px;
+    height: 85px;
     background: white;
-    border: 2px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 16px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
     font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    margin: 2px;
+}
+
+.card-item::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    pointer-events: none;
 }
 
 .card-item.red {
-    color: red;
+    color: #d40000;
 }
 
 .card-item.black {
-    color: black;
+    color: #000;
 }
 
 .card-item:hover {
     transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .card-item.selected {
-    transform: translateY(-10px);
+    transform: translateY(-15px);
     background: #ffeb3b;
     border-color: #ff9800;
+    box-shadow: 0 4px 8px rgba(255,152,0,0.4);
+}
+
+/* 精美扑克牌样式 */
+.poker-card {
+    width: 60px;
+    height: 85px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 4px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #ddd;
+    overflow: hidden;
+}
+
+.poker-card::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.poker-card.red {
+    color: #d40000;
+}
+
+.poker-card.black {
+    color: #000;
+}
+
+.poker-card .card-top {
+    font-size: 12px;
+    text-align: left;
+    line-height: 1;
+    z-index: 2;
+    position: relative;
+}
+
+.poker-card .card-center {
+    font-size: 24px;
+    text-align: center;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    position: relative;
+}
+
+.poker-card .card-bottom {
+    font-size: 12px;
+    text-align: right;
+    line-height: 1;
+    transform: rotate(180deg);
+    z-index: 2;
+    position: relative;
+}
+
+/* 特殊牌面的背景图案 */
+.poker-card.jack .card-center::after {
+    content: "J";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+.poker-card.queen .card-center::after {
+    content: "Q";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+.poker-card.king .card-center::after {
+    content: "K";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+.poker-card.ace .card-center::after {
+    content: "A";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+.poker-card.two .card-center::after {
+    content: "2";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+/* 王牌特殊样式 */
+.poker-card.joker {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+}
+
+.poker-card.joker.red {
+    color: #d40000;
+}
+
+.poker-card.joker.black {
+    color: #000;
+}
+
+.poker-card.joker .card-center::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 70%);
+    z-index: 1;
+}
+
+.poker-card.small-joker .card-center::after {
+    content: "SJ";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    opacity: 0.3;
+    z-index: 1;
+}
+
+.poker-card.big-joker .card-center::after {
+    content: "BJ";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    opacity: 0.3;
+    z-index: 1;
+}
+
+.poker-card.selected {
+    transform: translateY(-15px);
+    box-shadow: 0 4px 8px rgba(255,152,0,0.4);
+    border-color: #ff9800;
+    background: #fff9c4;
+}
+
+.poker-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.poker-card.selected:hover {
+    transform: translateY(-20px);
 }
 
 .modal {
