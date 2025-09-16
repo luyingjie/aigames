@@ -18,6 +18,10 @@ ai:
   default_think_time: 3    # 默认思考时间(秒)
   default_temperature: 0.7 # 默认创造性参数
   max_tokens: 1000         # 最大token数
+  # 新增AI API配置
+  api_url: "https://api.example.com/v1/chat/completions"  # AI API地址
+  api_key: "your-api-key-here"                            # API密钥
+  provider: "openai"                                      # AI服务提供商
 
 # 日志配置
 log:

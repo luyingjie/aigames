@@ -39,6 +39,10 @@ type AIConfig struct {
 	DefaultThinkTime   int     `mapstructure:"default_think_time"`  // 默认思考时间(秒)
 	DefaultTemperature float64 `mapstructure:"default_temperature"` // 默认创造性参数
 	MaxTokens          int     `mapstructure:"max_tokens"`          // 最大token数
+	// 新增AI API配置
+	APIURL   string `mapstructure:"api_url"`  // AI API地址
+	APIKey   string `mapstructure:"api_key"`  // API密钥
+	Provider string `mapstructure:"provider"` // AI服务提供商
 }
 
 // LogConfig 日志配置
@@ -144,6 +148,10 @@ func setDefaults() {
 	viper.SetDefault("ai.default_think_time", 3)
 	viper.SetDefault("ai.default_temperature", 0.7)
 	viper.SetDefault("ai.max_tokens", 1000)
+	// AI API默认配置
+	viper.SetDefault("ai.api_url", "https://api.openai.com/v1/chat/completions")
+	viper.SetDefault("ai.api_key", "")
+	viper.SetDefault("ai.provider", "openai")
 
 	// WebSocket默认配置
 	viper.SetDefault("websocket.read_buffer_size", 1024)

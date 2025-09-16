@@ -1,7 +1,10 @@
 package ai
 
 import (
+	"aigames/internal/models"
 	"aigames/pkg/logger"
+	"strconv"
+	"strings"
 )
 
 // PlayerInterface 定义玩家接口
@@ -33,4 +36,133 @@ func PassTurn(player *PlayerWrapper, gameService interface {
 }, roomID string) error {
 	logger.Info("AI玩家 %s 过牌", player.GetUserName())
 	return gameService.PassTurn(roomID, player.GetUserName())
+}
+
+// PlayCards AI出牌操作
+func PlayCards(player *PlayerWrapper, gameService interface {
+	PlayCards(roomID, username string, cards []models.Card) error
+}, roomID string, cards []models.Card) error {
+	logger.Info("AI玩家 %s 出牌: %v", player.GetUserName(), cards)
+	return gameService.PlayCards(roomID, player.GetUserName(), cards)
+}
+
+// APICallLandlord 使用AI API进行叫地主决策
+func APICallLandlord(apiClient interface {
+	Chat(messages []Message) (string, error)
+}, promptBuilder interface {
+	BuildCallLandlordPrompt(player *models.GamePlayer, game *models.Game) string
+}, player *models.GamePlayer, game *models.Game, gameService interface {
+	CallLandlord(roomID, username string, call bool) error
+}, roomID string) error {
+	// 构建提示词
+	prompt := promptBuilder.BuildCallLandlordPrompt(player, game)
+
+	// 发送API请求
+	messages := []Message{
+		{Role: "system", Content: "你是一个专业的斗地主游戏AI玩家。"},
+		{Role: "user", Content: prompt},
+	}
+
+	response, err := apiClient.Chat(messages)
+	if err != nil {
+		logger.Error("AI API调用失败: %v", err)
+		// 如果API调用失败，使用默认策略（不叫地主）
+		return CallLandlord(&PlayerWrapper{UserName: player.UserName}, gameService, roomID, false)
+	}
+
+	// 解析响应
+	call := strings.Contains(response, "叫地主")
+	logger.Info("AI玩家 %s 叫地主决策: %s (API响应: %s)", player.UserName, call, response)
+
+	return CallLandlord(&PlayerWrapper{UserName: player.UserName}, gameService, roomID, call)
+}
+
+// APIPlayCards 使用AI API进行出牌决策
+func APIPlayCards(apiClient interface {
+	Chat(messages []Message) (string, error)
+}, promptBuilder interface {
+	BuildPlayCardPrompt(player *models.GamePlayer, game *models.Game) string
+}, player *models.GamePlayer, game *models.Game, gameService interface {
+	PlayCards(roomID, username string, cards []models.Card) error
+	PassTurn(roomID, username string) error
+}, roomID string) error {
+	// 构建提示词
+	prompt := promptBuilder.BuildPlayCardPrompt(player, game)
+
+	// 发送API请求
+	messages := []Message{
+		{Role: "system", Content: "你是一个专业的斗地主游戏AI玩家。"},
+		{Role: "user", Content: prompt},
+	}
+
+	response, err := apiClient.Chat(messages)
+	if err != nil {
+		logger.Error("AI API调用失败: %v", err)
+		// 如果API调用失败，使用默认策略（过牌）
+		return PassTurn(&PlayerWrapper{UserName: player.UserName}, gameService, roomID)
+	}
+
+	logger.Info("AI玩家 %s 出牌决策 (API响应): %s", player.UserName, response)
+
+	// 解析响应
+	if strings.Contains(response, "过牌") {
+		return PassTurn(&PlayerWrapper{UserName: player.UserName}, gameService, roomID)
+	}
+
+	// 解析出牌
+	cards := parseCardsFromResponse(response, player.Cards)
+	if len(cards) == 0 {
+		// 如果无法解析出牌，选择过牌
+		return PassTurn(&PlayerWrapper{UserName: player.UserName}, gameService, roomID)
+	}
+
+	return PlayCards(&PlayerWrapper{UserName: player.UserName}, gameService, roomID, cards)
+}
+
+// parseCardsFromResponse 从API响应中解析出牌
+func parseCardsFromResponse(response string, handCards []models.Card) []models.Card {
+	// 查找"出牌:"部分
+	if strings.Contains(response, "出牌:") {
+		// 提取牌型部分
+		parts := strings.Split(response, "出牌:")
+		if len(parts) > 1 {
+			// 移除可能的标点符号
+			cardStr := strings.TrimSpace(parts[1])
+			cardStr = strings.Trim(cardStr, " .,;!?")
+
+			// 分割牌
+			cardParts := strings.Split(cardStr, ",")
+			var result []models.Card
+
+			// 遍历手牌，匹配API返回的牌
+			for _, handCard := range handCards {
+				cardName := handCard.String()
+				for _, part := range cardParts {
+					part = strings.TrimSpace(part)
+					// 检查是否匹配
+					if strings.Contains(cardName, part) || strings.Contains(part, cardName) {
+						result = append(result, handCard)
+						break
+					}
+				}
+			}
+
+			// 如果没有匹配到，尝试按牌值匹配
+			if len(result) == 0 {
+				for _, handCard := range handCards {
+					valueStr := strconv.Itoa(int(handCard.Value))
+					for _, part := range cardParts {
+						part = strings.TrimSpace(part)
+						if part == valueStr || part == models.ValueNames[handCard.Value] {
+							result = append(result, handCard)
+							break
+						}
+					}
+				}
+			}
+
+			return result
+		}
+	}
+	return []models.Card{}
 }

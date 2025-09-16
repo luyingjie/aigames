@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"aigames/internal/ai"
+	"aigames/internal/config"
 	"aigames/internal/models"
 	"aigames/pkg/logger"
 )
@@ -16,16 +16,21 @@ type AIController struct {
 	actionChan  chan bool
 	stopChan    chan bool
 	roomID      string
+	aiService   *AIService
 }
 
 // NewAIController 创建AI控制器
 func NewAIController(player *models.GamePlayer, gameService *GameService, roomID string) *AIController {
+	// 创建AI服务
+	aiService := NewAIService()
+
 	return &AIController{
 		player:      player,
 		gameService: gameService,
 		actionChan:  make(chan bool, 1),
 		stopChan:    make(chan bool, 1),
 		roomID:      roomID,
+		aiService:   aiService,
 	}
 }
 
@@ -37,7 +42,7 @@ func (c *AIController) Start() {
 		select {
 		case <-c.actionChan:
 			// 模拟思考时间
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Duration(config.GetConfig().AI.DefaultThinkTime) * time.Second)
 
 			// 根据游戏状态执行不同的操作
 			if err := c.executeAction(); err != nil {
@@ -75,19 +80,14 @@ func (c *AIController) executeAction() error {
 		return fmt.Errorf("获取游戏对象失败: %w", err)
 	}
 
-	// 创建玩家包装器
-	playerWrapper := &ai.PlayerWrapper{
-		UserName: c.player.UserName,
-	}
-
 	switch game.Status {
 	case models.GameStatusCalling:
-		// 叫地主阶段：AI永远不叫地主
-		return ai.CallLandlord(playerWrapper, c.gameService, c.roomID, false)
+		// 叫地主阶段：使用AI服务决策
+		return c.aiService.CallLandlord(c.player, game, c.gameService, c.roomID)
 
 	case models.GameStatusPlaying:
-		// 出牌阶段：AI永远过牌
-		return ai.PassTurn(playerWrapper, c.gameService, c.roomID)
+		// 出牌阶段：使用AI服务决策
+		return c.aiService.PlayCards(c.player, game, c.gameService, c.roomID)
 
 	default:
 		logger.Info("AI玩家 %s 在状态 %d 下无需操作", c.player.UserName, game.Status)
