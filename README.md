@@ -12,6 +12,7 @@
 - 🔒 **用户认证系统**：安全的注册登录机制，密码哈希存储
 - 🏠 **房间管理系统**：创建/加入房间，支持公开和私人房间
 - ⚡ **实时通信**：基于 WebSocket 的实时游戏状态同步
+- 🧠 **AI玩家支持**：支持OpenAI和Google Gemini模型的AI玩家
 - 📱 **响应式界面**：现代化的 Vue.js 3 前端界面
 - 💾 **数据持久化**：使用 BoltDB 进行本地数据存储
 
@@ -35,12 +36,30 @@
    go mod tidy
    ```
 
-3. **启动服务器**
+3. **配置AI API密钥**
+   编辑 `configs/config.yaml` 文件，设置您的AI API密钥：
+   ```yaml
+   # 对于OpenAI
+   ai:
+     default_model: "gpt-3.5-turbo"
+     api_url: "https://api.openai.com/v1/chat/completions"
+     api_key: "your-openai-api-key"
+     provider: "openai"
+   
+   # 对于Google Gemini
+   ai:
+     default_model: "gemini-2.5-pro"  # 或 "gemini-2.5-flash"
+     api_url: "https://generativelanguage.googleapis.com/v1beta/models"
+     api_key: "your-gemini-api-key"
+     provider: "gemini"
+   ```
+
+4. **启动服务器**
    ```bash
    go run main.go
    ```
 
-4. **访问游戏**
+5. **访问游戏**
    - 打开浏览器访问：http://localhost:8080
    - 注册新用户或使用现有账号登录
    - 创建房间或加入现有房间开始游戏
@@ -57,6 +76,7 @@
 
 - **框架**：[nano](https://github.com/lonng/nano) - 高性能 Go WebSocket 游戏框架
 - **数据库**：[BoltDB](https://github.com/etcd-io/bbolt) - 嵌入式键值数据库
+- **AI支持**：支持 OpenAI GPT 系列和 Google Gemini 系列模型
 - **架构模式**：依赖注入、服务化架构
 - **通信协议**：WebSocket + JSON
 
@@ -72,6 +92,12 @@
 ```
 aigames/
 ├── internal/               # 内部业务逻辑
+│   ├── ai/                # AI相关逻辑
+│   │   ├── api_client.go  # OpenAI客户端
+│   │   ├── gemini_client.go # Gemini客户端
+│   │   ├── logic.go       # AI核心逻辑
+│   │   ├── prompt_builder.go # 提示词构建器
+│   │   └── *.go           # 其他AI相关文件
 │   ├── config/            # 配置管理
 │   ├── database/          # 数据库操作
 │   ├── handlers/          # WebSocket 处理器
@@ -87,7 +113,8 @@ aigames/
 │   └── services/          # 业务服务层
 │       ├── user.go        # 用户服务
 │       ├── room.go        # 房间服务
-│       └── game.go        # 游戏服务
+│       ├── game.go        # 游戏服务
+│       └── ai_service.go  # AI服务
 ├── pkg/                   # 公共包
 │   ├── logger/            # 日志工具
 │   └── protocol/          # 通信协议
@@ -138,6 +165,18 @@ aigames/
 - **牌型比较**：按斗地主标准规则
 - **炸弹规则**：炸弹可以压制其他牌型
 - **回合制**：按顺序出牌，支持过牌
+
+### AI玩家
+
+#### 支持的AI模型
+- **OpenAI系列**：GPT-3.5, GPT-4等
+- **Google Gemini系列**：Gemini 2.5 Pro, Gemini 2.5 Flash等
+
+#### AI决策流程
+1. **提示词构建**：根据游戏状态构建详细的提示词
+2. **API调用**：向配置的AI服务发送请求
+3. **响应解析**：解析AI响应并转换为游戏操作
+4. **执行操作**：执行叫地主、出牌或过牌操作
 
 ## 🔧 API 接口
 
@@ -261,13 +300,37 @@ room, err := roomService.CreateRoom(id, name, owner, roomType, password)
 
 ### 配置管理
 
-配置文件位置：`internal/config/config.go`
+配置文件位置：`configs/config.yaml`
 
 主要配置项：
 - 服务器端口
 - 数据库路径
+- AI模型配置（支持OpenAI和Gemini）
 - 日志级别
 - 开发/生产模式
+
+### AI集成
+
+#### 支持的模型
+- OpenAI: GPT-3.5, GPT-4等
+- Google: Gemini 2.5 Pro, Gemini 2.5 Flash等
+
+#### 配置示例
+```yaml
+# OpenAI配置
+ai:
+  default_model: "gpt-3.5-turbo"
+  api_url: "https://api.openai.com/v1/chat/completions"
+  api_key: "your-openai-api-key"
+  provider: "openai"
+
+# Gemini配置
+ai:
+  default_model: "gemini-2.5-pro"
+  api_url: "https://generativelanguage.googleapis.com/v1beta/models"
+  api_key: "your-gemini-api-key"
+  provider: "gemini"
+```
 
 ## 📝 日志系统
 
@@ -308,6 +371,11 @@ room, err := roomService.CreateRoom(id, name, owner, roomType, password)
    - 检查 `data/` 目录权限
    - 确认磁盘空间充足
 
+4. **AI API调用失败**
+   - 检查API密钥是否正确配置
+   - 确认网络连接正常
+   - 检查API配额是否用完
+
 ### 调试模式
 
 启用详细日志：
@@ -337,6 +405,8 @@ Mode: "debug"
 - [nano](https://github.com/lonng/nano) - 优秀的 Go 游戏框架
 - [BoltDB](https://github.com/etcd-io/bbolt) - 高性能嵌入式数据库
 - [Vue.js](https://vuejs.org/) - 渐进式 JavaScript 框架
+- [OpenAI](https://openai.com/) - 强大的AI模型
+- [Google Gemini](https://ai.google.dev/) - Google的AI模型
 
 ## 📞 联系方式
 

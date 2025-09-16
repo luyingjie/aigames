@@ -8,16 +8,22 @@ import (
 )
 
 // PromptBuilder 提示词构建器
-type PromptBuilder struct{}
+type PromptBuilder struct {
+	provider string
+}
 
 // NewPromptBuilder 创建提示词构建器
 func NewPromptBuilder() *PromptBuilder {
-	return &PromptBuilder{}
+	// 这里可以获取实际的提供商配置
+	// 为了简化，我们使用默认值
+	return &PromptBuilder{
+		provider: "gemini", // 默认使用Gemini
+	}
 }
 
 // BuildGameRulesPrompt 构建游戏规则提示词
 func (pb *PromptBuilder) BuildGameRulesPrompt() string {
-	return `你是一个专业的斗地主游戏AI玩家。请遵循以下规则：
+	basePrompt := `你是一个专业的斗地主游戏AI玩家。请遵循以下规则：
 
 1. 游戏基本规则：
    - 使用一副54张的扑克牌（包括大小王）
@@ -52,11 +58,24 @@ func (pb *PromptBuilder) BuildGameRulesPrompt() string {
    - 如果无法或不想压过上一手牌，可以选择"过牌"
    - 一轮中所有其他玩家都过牌后，最后出牌的玩家可以出任意合法牌型
 
-6. 决策策略：
+6. 决策策略：`
+
+	if pb.provider == "gemini" {
+		basePrompt += `
+   - 地主目标：尽快出完所有牌
+   - 农民目标：合作阻止地主，农民之间需要默契配合
+   - 优先保留关键牌型（如炸弹）在关键时刻使用
+   - 根据当前手牌和已出牌情况，计算最优出牌策略
+   - 请以清晰、简洁的方式回答，严格按照指定格式输出`
+	} else {
+		basePrompt += `
    - 地主目标：尽快出完所有牌
    - 农民目标：合作阻止地主，农民之间需要默契配合
    - 优先保留关键牌型（如炸弹）在关键时刻使用
    - 根据当前手牌和已出牌情况，计算最优出牌策略`
+	}
+
+	return basePrompt
 }
 
 // BuildCallLandlordPrompt 构建叫地主提示词
@@ -78,8 +97,13 @@ func (pb *PromptBuilder) BuildCallLandlordPrompt(player *models.GamePlayer, game
 		}
 	}
 
-	sb.WriteString("\n请分析你的手牌，判断是否叫地主。")
-	sb.WriteString("\n回答格式：只回答'叫地主'或'不叫'，不要包含其他内容。")
+	if pb.provider == "gemini" {
+		sb.WriteString("\n请分析你的手牌，判断是否叫地主。")
+		sb.WriteString("\n回答格式：只回答'叫地主'或'不叫'，不要包含其他内容。")
+	} else {
+		sb.WriteString("\n请分析你的手牌，判断是否叫地主。")
+		sb.WriteString("\n回答格式：只回答'叫地主'或'不叫'，不要包含其他内容。")
+	}
 
 	return sb.String()
 }
@@ -107,8 +131,14 @@ func (pb *PromptBuilder) BuildPlayCardPrompt(player *models.GamePlayer, game *mo
 		}
 	}
 
-	sb.WriteString("\n请分析当前情况，决定出什么牌。")
-	sb.WriteString("\n回答格式：只回答'过牌'或'出牌:牌型'，例如'出牌:3,4,5'，不要包含其他内容。")
+	if pb.provider == "gemini" {
+		sb.WriteString("\n请分析当前情况，决定出什么牌。")
+		sb.WriteString("\n回答格式：只回答'过牌'或'出牌:牌型'，例如'出牌:3,4,5'，不要包含其他内容。")
+		sb.WriteString("\n注意：请确保选择的牌在你的手牌中，并且符合斗地主的出牌规则。")
+	} else {
+		sb.WriteString("\n请分析当前情况，决定出什么牌。")
+		sb.WriteString("\n回答格式：只回答'过牌'或'出牌:牌型'，例如'出牌:3,4,5'，不要包含其他内容。")
+	}
 
 	return sb.String()
 }
@@ -134,4 +164,9 @@ func getPlayerNameByPosition(game *models.Game, position models.PlayerPosition) 
 		return "未知玩家"
 	}
 	return player.UserName
+}
+
+// SetProvider 设置AI提供商
+func (pb *PromptBuilder) SetProvider(provider string) {
+	pb.provider = provider
 }

@@ -70,11 +70,18 @@ func APICallLandlord(apiClient interface {
 		return CallLandlord(&PlayerWrapper{UserName: player.UserName}, gameService, roomID, false)
 	}
 
+	return APICallLandlordWithResponse(response, &PlayerWrapper{UserName: player.UserName}, gameService, roomID)
+}
+
+// APICallLandlordWithResponse 使用AI API响应进行叫地主决策
+func APICallLandlordWithResponse(response string, player *PlayerWrapper, gameService interface {
+	CallLandlord(roomID, username string, call bool) error
+}, roomID string) error {
 	// 解析响应
 	call := strings.Contains(response, "叫地主")
-	logger.Info("AI玩家 %s 叫地主决策: %s (API响应: %s)", player.UserName, call, response)
+	logger.Info("AI玩家 %s 叫地主决策: %t (API响应: %s)", player.GetUserName(), call, response)
 
-	return CallLandlord(&PlayerWrapper{UserName: player.UserName}, gameService, roomID, call)
+	return CallLandlord(player, gameService, roomID, call)
 }
 
 // APIPlayCards 使用AI API进行出牌决策
@@ -102,21 +109,29 @@ func APIPlayCards(apiClient interface {
 		return PassTurn(&PlayerWrapper{UserName: player.UserName}, gameService, roomID)
 	}
 
-	logger.Info("AI玩家 %s 出牌决策 (API响应): %s", player.UserName, response)
+	return APIPlayCardsWithResponse(response, &PlayerWrapper{UserName: player.UserName}, player.Cards, gameService, roomID)
+}
+
+// APIPlayCardsWithResponse 使用AI API响应进行出牌决策
+func APIPlayCardsWithResponse(response string, player *PlayerWrapper, handCards []models.Card, gameService interface {
+	PlayCards(roomID, username string, cards []models.Card) error
+	PassTurn(roomID, username string) error
+}, roomID string) error {
+	logger.Info("AI玩家 %s 出牌决策 (API响应): %s", player.GetUserName(), response)
 
 	// 解析响应
 	if strings.Contains(response, "过牌") {
-		return PassTurn(&PlayerWrapper{UserName: player.UserName}, gameService, roomID)
+		return PassTurn(player, gameService, roomID)
 	}
 
 	// 解析出牌
-	cards := parseCardsFromResponse(response, player.Cards)
+	cards := parseCardsFromResponse(response, handCards)
 	if len(cards) == 0 {
 		// 如果无法解析出牌，选择过牌
-		return PassTurn(&PlayerWrapper{UserName: player.UserName}, gameService, roomID)
+		return PassTurn(player, gameService, roomID)
 	}
 
-	return PlayCards(&PlayerWrapper{UserName: player.UserName}, gameService, roomID, cards)
+	return PlayCards(player, gameService, roomID, cards)
 }
 
 // parseCardsFromResponse 从API响应中解析出牌

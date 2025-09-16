@@ -142,16 +142,16 @@ func setDefaults() {
 	viper.SetDefault("jwt.issuer", "ai-game")
 
 	// AI默认配置
-	viper.SetDefault("ai.default_model", "gpt-3.5-turbo")
+	viper.SetDefault("ai.default_model", "gemini-2.5-pro")
 	viper.SetDefault("ai.max_concurrent", 10)
 	viper.SetDefault("ai.timeout", 30)
 	viper.SetDefault("ai.default_think_time", 3)
 	viper.SetDefault("ai.default_temperature", 0.7)
 	viper.SetDefault("ai.max_tokens", 1000)
 	// AI API默认配置
-	viper.SetDefault("ai.api_url", "https://api.openai.com/v1/chat/completions")
+	viper.SetDefault("ai.api_url", "https://generativelanguage.googleapis.com/v1beta/models")
 	viper.SetDefault("ai.api_key", "")
-	viper.SetDefault("ai.provider", "openai")
+	viper.SetDefault("ai.provider", "gemini")
 
 	// WebSocket默认配置
 	viper.SetDefault("websocket.read_buffer_size", 1024)
